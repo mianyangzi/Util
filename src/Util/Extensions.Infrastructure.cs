@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Util.Dependency;
 
@@ -13,6 +14,8 @@ namespace Util {
         /// <param name="services">服务集合</param>
         /// <param name="configs">依赖配置</param>
         public static IServiceProvider AddUtil( this IServiceCollection services, params IConfig[] configs ) {
+            services.AddHttpContextAccessor();
+            Encoding.RegisterProvider( CodePagesEncodingProvider.Instance );
             return new DependencyConfiguration( services, configs ).Config();
         }
     }

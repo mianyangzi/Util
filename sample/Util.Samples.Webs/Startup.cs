@@ -1,13 +1,18 @@
 ﻿using System;
+using System.IO;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.SpaServices.Webpack;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Swashbuckle.AspNetCore.Swagger;
+using Util.Datas.Ef;
 using Util.Events.Default;
 using Util.Logs.Extensions;
-using Util.Ui.Extensions;
+using Util.Samples.Webs.Datas;
+using Util.Samples.Webs.Datas.SqlServer;
 using Util.Webs.Extensions;
+using Util.Webs.Filters;
 
 namespace Util.Samples.Webs {
     /// <summary>
@@ -32,19 +37,34 @@ namespace Util.Samples.Webs {
         /// </summary>
         public IServiceProvider ConfigureServices( IServiceCollection services ) {
             //添加Mvc服务
-            services.AddMvc().AddControllersAsServices();
+            services.AddMvc( options => {
+                    //options.Filters.Add( new AutoValidateAntiforgeryTokenAttribute() );
+                    options.Filters.Add( new ExceptionHandlerAttribute() );
+                }
+            ).AddControllersAsServices();
 
             //添加NLog日志操作
             services.AddNLog();
 
-            //添加Exceptionless日志操作
-            //services.AddExceptionless( config => {
-            //    config.ServerUrl = "http://127.0.0.1:8011";
-            //    config.ApiKey = "oGBxMBfTQhdRJm1npjGgN1kNJvR6eYSWIpws8pvm";
-            //} );
-
             //添加事件总线服务
             services.AddEventBus();
+
+            //注册XSRF令牌服务
+            services.AddXsrfToken();
+
+            //添加工作单元
+            services.AddUnitOfWork<ISampleUnitOfWork, SampleUnitOfWork>( Configuration.GetConnectionString( "DefaultConnection" ) );
+
+            //添加Swagger
+            services.AddSwaggerGen( options => {
+                options.SwaggerDoc( "v1", new Info { Title = "Util Web Api Demo", Version = "v1" } );
+                options.IncludeXmlComments( Path.Combine( AppContext.BaseDirectory, "Util.xml" ) );
+                options.IncludeXmlComments( Path.Combine( AppContext.BaseDirectory, "Util.Webs.xml" ) );
+                options.IncludeXmlComments( Path.Combine( AppContext.BaseDirectory, "Util.Samples.Webs.xml" ) );
+            } );
+
+            // 添加Razor静态Html生成器
+            services.AddRazorHtml();
 
             //添加Util基础设施服务
             return services.AddUtil();
@@ -54,19 +74,24 @@ namespace Util.Samples.Webs {
         /// 配置请求管道
         /// </summary>
         public void Configure( IApplicationBuilder app, IHostingEnvironment env ) {
-            if ( env.IsDevelopment() == false ) {
-                ProductionConfig( app );
+            if( env.IsDevelopment() ) {
+                DevelopmentConfig( app );
                 return;
             }
-            DevelopmentConfig( app );
+            ProductionConfig( app );
         }
 
         /// <summary>
-        /// 生产环境配置
+        /// 开发环境配置
         /// </summary>
-        private void ProductionConfig( IApplicationBuilder app ) {
-            app.UseExceptionHandler( "/Home/Error" );
-            app.UseAuthentication();
+        private void DevelopmentConfig( IApplicationBuilder app ) {
+            app.UseBrowserLink();
+            app.UseDeveloperExceptionPage();
+            app.UseDatabaseErrorPage();
+            app.UseWebpackDevMiddleware( new WebpackDevMiddlewareOptions {
+                HotModuleReplacement = true
+            } );
+            app.UseSwaggerX();
             CommonConfig( app );
         }
 
@@ -76,6 +101,8 @@ namespace Util.Samples.Webs {
         private void CommonConfig( IApplicationBuilder app ) {
             app.UseErrorLog();
             app.UseStaticFiles();
+            app.UseAuthentication();
+            app.UseXsrfToken();
             ConfigRoute( app );
         }
 
@@ -84,20 +111,17 @@ namespace Util.Samples.Webs {
         /// </summary>
         private void ConfigRoute( IApplicationBuilder app ) {
             app.UseMvc( routes => {
-                routes.MapRoute( "areaRoute", "{area:exists}/{controller}/{action=Index}/{id?}" );
+                routes.MapRoute( "areaRoute", "view/{area:exists}/{controller}/{action=Index}/{id?}" );
                 routes.MapRoute( "default", "{controller=Home}/{action=Index}/{id?}" );
+                routes.MapSpaFallbackRoute( "spa-fallback", new { controller = "Home", action = "Index" } );
             } );
         }
 
         /// <summary>
-        /// 开发环境配置
+        /// 生产环境配置
         /// </summary>
-        private void DevelopmentConfig( IApplicationBuilder app ) {
-            app.UseBrowserLink();
-            app.UseDeveloperExceptionPage();
-            app.UseWebpackDevMiddleware( new WebpackDevMiddlewareOptions {
-                HotModuleReplacement = true
-            } );
+        private void ProductionConfig( IApplicationBuilder app ) {
+            app.UseExceptionHandler( "/Home/Error" );
             CommonConfig( app );
         }
     }

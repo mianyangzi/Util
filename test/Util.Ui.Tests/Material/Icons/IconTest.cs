@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Text.Encodings.Web;
 using Util.Helpers;
+using Util.Ui.Configs;
 using Util.Ui.Enums;
 using Util.Ui.Extensions;
 using Util.Ui.Material.Icons;
@@ -27,6 +28,7 @@ namespace Util.Ui.Tests.Material.Icons {
         public IconTest( ITestOutputHelper output ) {
             _output = output;
             _icon = new Icon();
+            Config.IsValidate = false;
         }
 
         /// <summary>
@@ -54,7 +56,7 @@ namespace Util.Ui.Tests.Material.Icons {
         public void TestMaterial() {
             var result = new String();
             result.Append( "<mat-icon>android</mat-icon>" );
-            Assert.Equal( result.ToString(), GetResult( _icon.Material( MaterialIcon.Android ) ) );
+            Assert.Equal( result.ToString(), GetResult( _icon.Icon( MaterialIcon.Android ) ) );
         }
 
         /// <summary>
@@ -64,7 +66,7 @@ namespace Util.Ui.Tests.Material.Icons {
         public void TestClass() {
             var result = new String();
             result.Append( "<mat-icon class=\"a\">android</mat-icon>" );
-            Assert.Equal( result.ToString(), GetResult( _icon.Material( MaterialIcon.Android ).Class("a") ) );
+            Assert.Equal( result.ToString(), GetResult( _icon.Icon( MaterialIcon.Android ).Class("a") ) );
         }
 
         /// <summary>
@@ -74,7 +76,7 @@ namespace Util.Ui.Tests.Material.Icons {
         public void TestStyle() {
             var result = new String();
             result.Append( "<mat-icon style=\"a\">android</mat-icon>" );
-            Assert.Equal( result.ToString(), GetResult( _icon.Material( MaterialIcon.Android ).Style( "a" ) ) );
+            Assert.Equal( result.ToString(), GetResult( _icon.Icon( MaterialIcon.Android ).Style( "a" ) ) );
         }
 
         /// <summary>
@@ -84,7 +86,7 @@ namespace Util.Ui.Tests.Material.Icons {
         public void TestAttribute() {
             var result = new String();
             result.Append( "<mat-icon a=\"1\">android</mat-icon>" );
-            Assert.Equal( result.ToString(), GetResult( _icon.Material( MaterialIcon.Android ).Attribute( "a","1" ) ) );
+            Assert.Equal( result.ToString(), GetResult( _icon.Icon( MaterialIcon.Android ).Attribute( "a","1" ) ) );
         }
 
         /// <summary>
@@ -94,7 +96,7 @@ namespace Util.Ui.Tests.Material.Icons {
         public void TestId() {
             var result = new String();
             result.Append( "<mat-icon id=\"a\">android</mat-icon>" );
-            Assert.Equal( result.ToString(), GetResult( _icon.Material( MaterialIcon.Android ).Id( "a" ) ) );
+            Assert.Equal( result.ToString(), GetResult( _icon.Icon( MaterialIcon.Android ).Id( "a" ) ) );
         }
 
         /// <summary>
@@ -104,7 +106,7 @@ namespace Util.Ui.Tests.Material.Icons {
         public void TestFontAwesome() {
             var result = new String();
             result.Append( "<i class=\"fa fa-android\"></i>" );
-            Assert.Equal( result.ToString(), GetResult( _icon.FontAwesome( FontAwesomeIcon.Android ) ) );
+            Assert.Equal( result.ToString(), GetResult( _icon.Icon( FontAwesomeIcon.Android ) ) );
         }
 
         /// <summary>
@@ -114,7 +116,7 @@ namespace Util.Ui.Tests.Material.Icons {
         public void TestIconSize() {
             var result = new String();
             result.Append( "<mat-icon class=\"fa-2x\">android</mat-icon>" );
-            Assert.Equal( result.ToString(), GetResult( _icon.Material( MaterialIcon.Android ).Size(IconSize.Large2X) ) );
+            Assert.Equal( result.ToString(), GetResult( _icon.Icon( MaterialIcon.Android ).Size(IconSize.Large2X) ) );
         }
 
         /// <summary>
@@ -124,7 +126,7 @@ namespace Util.Ui.Tests.Material.Icons {
         public void TestSpin_FontAwesome_True() {
             var result = new String();
             result.Append( "<i class=\"fa-spin fa fa-android\"></i>" );
-            Assert.Equal( result.ToString(), GetResult( _icon.FontAwesome( FontAwesomeIcon.Android ).Spin() ) );
+            Assert.Equal( result.ToString(), GetResult( _icon.Icon( FontAwesomeIcon.Android ).Spin() ) );
         }
 
         /// <summary>
@@ -134,7 +136,7 @@ namespace Util.Ui.Tests.Material.Icons {
         public void TestSpin_FontAwesome_False() {
             var result = new String();
             result.Append( "<i class=\"fa fa-android\"></i>" );
-            Assert.Equal( result.ToString(), GetResult( _icon.FontAwesome( FontAwesomeIcon.Android ).Spin().Spin( false ) ) );
+            Assert.Equal( result.ToString(), GetResult( _icon.Icon( FontAwesomeIcon.Android ).Spin().Spin( false ) ) );
         }
 
         /// <summary>
@@ -144,7 +146,7 @@ namespace Util.Ui.Tests.Material.Icons {
         public void TestSpin_Material() {
             var result = new String();
             result.Append( "<mat-icon class=\"fa-spin\">android</mat-icon>" );
-            Assert.Equal( result.ToString(), GetResult( _icon.Material( MaterialIcon.Android ).Spin() ) );
+            Assert.Equal( result.ToString(), GetResult( _icon.Icon( MaterialIcon.Android ).Spin() ) );
         }
 
         /// <summary>
@@ -154,7 +156,7 @@ namespace Util.Ui.Tests.Material.Icons {
         public void TestRotate_FontAwesome() {
             var result = new String();
             result.Append( "<i class=\"fa-rotate-180 fa fa-android\"></i>" );
-            Assert.Equal( result.ToString(), GetResult( _icon.FontAwesome( FontAwesomeIcon.Android ).Rotate( RotateType.Rotate180 ) ) );
+            Assert.Equal( result.ToString(), GetResult( _icon.Icon( FontAwesomeIcon.Android ).Rotate( RotateType.Rotate180 ) ) );
         }
 
         /// <summary>
@@ -164,7 +166,7 @@ namespace Util.Ui.Tests.Material.Icons {
         public void TestRotate_Material() {
             var result = new String();
             result.Append( "<mat-icon class=\"fa-rotate-180\">android</mat-icon>" );
-            Assert.Equal( result.ToString(), GetResult( _icon.Material( MaterialIcon.Android ).Rotate( RotateType.Rotate180 ) ) );
+            Assert.Equal( result.ToString(), GetResult( _icon.Icon( MaterialIcon.Android ).Rotate( RotateType.Rotate180 ) ) );
         }
 
         /// <summary>
@@ -177,7 +179,7 @@ namespace Util.Ui.Tests.Material.Icons {
             result.Append( "<i class=\"fa-stack-2x fa fa-square-o\"></i>" );
             result.Append( "<i class=\"fa-stack-1x fa fa-twitter\"></i>" );
             result.Append( "</span>" );
-            Assert.Equal( result.ToString(), GetResult( _icon.FontAwesome( FontAwesomeIcon.SquareO ).Child( FontAwesomeIcon.Twitter ) ) );
+            Assert.Equal( result.ToString(), GetResult( _icon.Icon( FontAwesomeIcon.SquareO ).Child( FontAwesomeIcon.Twitter ) ) );
         }
 
         /// <summary>
@@ -190,7 +192,7 @@ namespace Util.Ui.Tests.Material.Icons {
             result.Append( "<i class=\"fa-stack-2x fa fa-square-o\"></i>" );
             result.Append( "<i class=\"a fa-stack-1x fa fa-twitter\"></i>" );
             result.Append( "</span>" );
-            Assert.Equal( result.ToString(), GetResult( _icon.FontAwesome( FontAwesomeIcon.SquareO ).Child( FontAwesomeIcon.Twitter,"a" ) ) );
+            Assert.Equal( result.ToString(), GetResult( _icon.Icon( FontAwesomeIcon.SquareO ).Child( FontAwesomeIcon.Twitter,"a" ) ) );
         }
     }
 }

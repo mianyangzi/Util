@@ -1,24 +1,12 @@
 ﻿import { Component } from "@angular/core"
-import { AppService } from "./app.service";
+import { env } from './env';
 
+/**
+ * 根组件
+ */
 @Component({
-    selector: 'hello-world',
-    templateUrl: "/home/a"
+    selector: 'app',
+    templateUrl: env.prod() ? './app.component.html' : '/home/main'
 })
 export class AppComponent {
-    userName;
-    password;
-
-    public state;
-    constructor( private service:AppService) {
-    }
-
-    public login(): void {
-        let result = this.service.login(this.userName, this.password);
-        if (result) {
-            this.state = "登陆成功";
-            return;
-        }
-        this.state = "登陆失败";
-    }
 }

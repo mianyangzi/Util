@@ -1,66 +1,144 @@
-﻿using Util.Ui.Builders;
+﻿using System.Linq;
+using Util.Ui.Angular;
+using Util.Ui.Angular.Renders;
+using Util.Ui.Builders;
 using Util.Ui.Configs;
-using Util.Ui.Material.Buttons.Builders;
-using Util.Ui.Renders;
 using Util.Ui.Extensions;
-using Util.Ui.Material.Configs;
+using Util.Ui.Material.Buttons.Configs;
+using Util.Ui.Material.Enums;
+using Util.Ui.Material.Extensions;
+using Util.Ui.Material.Menus;
 
 namespace Util.Ui.Material.Buttons.Renders {
     /// <summary>
     /// 按钮渲染器
     /// </summary>
-    public class ButtonRender : RenderBase {
+    public class ButtonRender : AngularRenderBase {
         /// <summary>
         /// 配置
         /// </summary>
-        private readonly IConfig _config;
+        private readonly ButtonConfig _config;
 
         /// <summary>
         /// 初始化按钮渲染器
         /// </summary>
         /// <param name="config">配置</param>
-        public ButtonRender( IConfig config ) {
+        public ButtonRender( ButtonConfig config ) : base( config ) {
             _config = config;
         }
 
         /// <summary>
         /// 获取标签生成器
         /// </summary>
-        protected override ITagBuilder GetTagBuilder() {
+        protected override TagBuilder GetTagBuilder() {
             var builder = new ButtonBuilder();
-            builder.AddOtherAttributes( _config );
-            builder.Id( _config );
-            builder.Text( _config );
-            SetPlainStyle( builder );
-            builder.AddAttribute( "color", _config.GetValue( MaterialConst.Color ).ToLower() );
-            SetDisabled( builder );
-            SetEvents( builder );
+            Config( builder );
             return builder;
         }
 
         /// <summary>
-        /// 设置扁平风格样式
+        /// 配置
         /// </summary>
-        private void SetPlainStyle( ButtonBuilder builder ) {
-            if ( _config.GetValue<bool>( UiConst.Plain ) ) {
-                builder.AddAttribute( "mat-button", "mat-button" );
+        private void Config( TagBuilder builder ) {
+            ConfigId( builder );
+            ConfigText( builder );
+            ConfigType( builder );
+            ConfigStyle( builder );
+            ConfigColor( builder );
+            ConfigDisabled( builder );
+            ConfigTooltip( builder );
+            ConfigMenu( builder );
+            ConfigCloseDialog( builder );
+            ConfigContent( builder );
+            ConfigEvents( builder );
+        }
+
+        /// <summary>
+        /// 配置文本
+        /// </summary>
+        private void ConfigText( TagBuilder builder ) {
+            if( _config.Contains( UiConst.Text ) )
+                builder.SetContent( _config.GetValue( UiConst.Text ) );
+            if( _config.Contains( AngularConst.BindText ) )
+                builder.SetContent( $"{{{{{_config.GetValue( AngularConst.BindText )}}}}}" );
+        }
+
+        /// <summary>
+        /// 配置类型
+        /// </summary>
+        private void ConfigType( TagBuilder builder ) {
+            builder.AddAttribute( UiConst.Type, "button" );
+        }
+
+        /// <summary>
+        /// 设置样式
+        /// </summary>
+        private void ConfigStyle( TagBuilder builder ) {
+            if( _config.Contains( UiConst.Styles ) ) {
+                builder.AddAttribute( _config.GetValue<ButtonStyle?>( UiConst.Styles )?.Description() );
                 return;
             }
-            builder.AddAttribute( "mat-raised-button", "mat-raised-button" );
+            builder.AddAttribute( ButtonStyle.Raised.Description() );
         }
 
         /// <summary>
-        /// 设置禁用
+        /// 配置颜色
         /// </summary>
-        private void SetDisabled( ButtonBuilder builder ) {
-            if( _config.Contains( UiConst.Disabled ) )
-                builder.AddAttribute( "disabled", "disabled" );
+        private void ConfigColor( TagBuilder builder ) {
+            builder.AddAttribute( UiConst.Color, _config.GetValue( UiConst.Color ).ToLower() );
         }
 
         /// <summary>
-        /// 设置事件
+        /// 配置禁用
         /// </summary>
-        private void SetEvents( ButtonBuilder builder ) {
+        private void ConfigDisabled( TagBuilder builder ) {
+            builder.AddAttribute( "[disabled]", _config.GetBoolValue( UiConst.Disabled ) );
+        }
+
+        /// <summary>
+        /// 配置提示
+        /// </summary>
+        private void ConfigTooltip( TagBuilder builder ) {
+            builder.AddAttribute( "matTooltip", _config.GetValue( UiConst.Tooltip ) );
+        }
+
+        /// <summary>
+        /// 配置菜单
+        /// </summary>
+        private void ConfigMenu( TagBuilder builder ) {
+            builder.AddAttribute( "[matMenuTriggerFor]", _config.GetValue( MaterialConst.MenuId ) );
+            AddMenus( builder );
+        }
+
+        /// <summary>
+        /// 添加菜单
+        /// </summary>
+        private void AddMenus( TagBuilder builder ) {
+            _config.Data?.Select( data => new Menu().Data( data ) ).ToList()
+                .ForEach( menu => builder.AppendContent( menu ) );
+        }
+
+        /// <summary>
+        /// 配置关闭弹出层
+        /// </summary>
+        private void ConfigCloseDialog( TagBuilder builder ) {
+            if( _config.Contains( MaterialConst.CloseDialog ) )
+                builder.AddAttribute( "mat-dialog-close", _config.GetValue( MaterialConst.CloseDialog ),false );
+        }
+
+        /// <summary>
+        /// 配置内容
+        /// </summary>
+        protected override void ConfigContent( TagBuilder builder ) {
+            if( _config.Contains( UiConst.Text ) || _config.Contains( AngularConst.BindText ) )
+                return;
+            builder.AppendContent( _config.Content );
+        }
+
+        /// <summary>
+        /// 配置事件
+        /// </summary>
+        private void ConfigEvents( TagBuilder builder ) {
             builder.AddAttribute( "(click)", _config.GetValue( UiConst.OnClick ) );
         }
     }

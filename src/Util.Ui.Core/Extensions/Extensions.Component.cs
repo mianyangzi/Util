@@ -2,7 +2,6 @@
 using Util.Ui.Components.Internal;
 using Util.Ui.Configs;
 using Util.Ui.Operations;
-using Util.Ui.Operations.Forms;
 
 namespace Util.Ui.Extensions {
     /// <summary>
@@ -16,10 +15,10 @@ namespace Util.Ui.Extensions {
         /// <param name="component">组件实例</param>
         /// <param name="name">属性名</param>
         /// <param name="value">属性值</param>
-        public static TComponent Attribute<TComponent>( this TComponent component, string name, string value ) where TComponent : IOption {
+        public static TComponent Attribute<TComponent>( this TComponent component, string name, string value ) where TComponent : IOption,IAttribute {
             var option = component as IOptionConfig;
             option?.Config<Config>( config => {
-                config.OtherAttributes.Add( name, value );
+                config.OutputAttributes.Add( name, value );
             } );
             return component;
         }
@@ -30,38 +29,10 @@ namespace Util.Ui.Extensions {
         /// <typeparam name="TComponent">组件类型</typeparam>
         /// <param name="component">组件实例</param>
         /// <param name="value">属性值</param>
-        public static TComponent Attribute<TComponent>( this TComponent component, string value ) where TComponent : IOption {
+        public static TComponent Attribute<TComponent>( this TComponent component, string value ) where TComponent : IOption, IAttribute {
             var option = component as IOptionConfig;
             option?.Config<Config>( config => {
-                config.OtherAttributes.Add( value, null );
-            } );
-            return component;
-        }
-
-        /// <summary>
-        /// 设置class
-        /// </summary>
-        /// <typeparam name="TComponent">组件类型</typeparam>
-        /// <param name="component">组件实例</param>
-        /// <param name="class">css类名</param>
-        public static TComponent Class<TComponent>( this TComponent component, string @class ) where TComponent : IOption {
-            var option = component as IOptionConfig;
-            option?.Config<Config>( config => {
-                config.AddClass( @class );
-            } );
-            return component;
-        }
-
-        /// <summary>
-        /// 设置样式
-        /// </summary>
-        /// <typeparam name="TComponent">组件类型</typeparam>
-        /// <param name="component">组件实例</param>
-        /// <param name="style">样式</param>
-        public static TComponent Style<TComponent>( this TComponent component, string style ) where TComponent : IOption {
-            var option = component as IOptionConfig;
-            option?.Config<Config>( config => {
-                config.OtherAttributes.Add( UiConst.Style, style );
+                config.OutputAttributes.Add( value, null );
             } );
             return component;
         }
@@ -75,7 +46,7 @@ namespace Util.Ui.Extensions {
         public static TComponent Id<TComponent>( this TComponent component, string id ) where TComponent : IOption {
             var option = component as IOptionConfig;
             option?.Config<Config>( config => {
-                config.Attributes.Add( UiConst.Id, id );
+                config.SetAttribute( UiConst.Id, id );
             } );
             return component;
         }
@@ -89,7 +60,7 @@ namespace Util.Ui.Extensions {
         public static TComponent Name<TComponent>( this TComponent component, string name ) where TComponent : IOption, IName {
             var option = component as IOptionConfig;
             option?.Config<Config>( config => {
-                config.Name = name;
+                config.SetAttribute( UiConst.Name, name );
             } );
             return component;
         }
@@ -97,10 +68,10 @@ namespace Util.Ui.Extensions {
         /// <summary>
         /// 设置文本
         /// </summary>
-        /// <typeparam name="TComponent">标题组件类型</typeparam>
+        /// <typeparam name="TComponent">组件类型</typeparam>
         /// <param name="component">组件实例</param>
-        /// <param name="text">标题文本</param>
-        public static TComponent Text<TComponent>( this TComponent component, string text ) where TComponent : IComponent, IText {
+        /// <param name="text">文本</param>
+        public static TComponent Text<TComponent>( this TComponent component, string text ) where TComponent : IOption, IText {
             var option = component as IOptionConfig;
             option?.Config<Config>( config => {
                 config.SetAttribute( UiConst.Text, text );
@@ -109,46 +80,42 @@ namespace Util.Ui.Extensions {
         }
 
         /// <summary>
-        /// 设置占位符
-        /// </summary>
-        /// <typeparam name="TComponent">标题组件类型</typeparam>
-        /// <param name="component">组件实例</param>
-        /// <param name="text">文本</param>
-        public static TComponent Placeholder<TComponent>( this TComponent component, string text ) where TComponent : IComponent, IPlaceholder {
-            var option = component as IOptionConfig;
-            option?.Config<Config>( config => {
-                config.Placeholder = text;
-            } );
-            return component;
-        }
-
-        /// <summary>
-        /// 设置值
-        /// </summary>
-        /// <typeparam name="TComponent">标题组件类型</typeparam>
-        /// <param name="component">组件实例</param>
-        /// <param name="value">值</param>
-        public static TComponent Value<TComponent>( this TComponent component, string value ) where TComponent : IComponent, IValue {
-            var option = component as IOptionConfig;
-            option?.Config<Config>( config => {
-                config.Value = value;
-            } );
-            return component;
-        }
-
-        /// <summary>
         /// 禁用
         /// </summary>
-        /// <typeparam name="TComponent">标题组件类型</typeparam>
+        /// <typeparam name="TComponent">组件类型</typeparam>
         /// <param name="component">组件实例</param>
-        /// <param name="disabled">是否禁用</param>
-        public static TComponent Disable<TComponent>( this TComponent component, bool disabled = true ) where TComponent : IComponent, IDisable {
+        public static TComponent Disable<TComponent>( this TComponent component ) where TComponent : IOption, IDisabled {
             var option = component as IOptionConfig;
             option?.Config<Config>( config => {
-                if( disabled )
-                    config.Attributes.Add( UiConst.Disabled, "disabled" );
-                else
-                    config.Remove( UiConst.Disabled );
+                config.SetAttribute( UiConst.Disabled, true );
+            } );
+            return component;
+        }
+
+        /// <summary>
+        /// 提示
+        /// </summary>
+        /// <typeparam name="TComponent">组件类型</typeparam>
+        /// <param name="component">组件实例</param>
+        /// <param name="tooltip">提示</param>
+        public static TComponent Tooltip<TComponent>( this TComponent component,string tooltip ) where TComponent : IOption, ITooltip {
+            var option = component as IOptionConfig;
+            option?.Config<Config>( config => {
+                config.SetAttribute( UiConst.Tooltip, tooltip );
+            } );
+            return component;
+        }
+
+        /// <summary>
+        /// 设置高度
+        /// </summary>
+        /// <typeparam name="TComponent">组件类型</typeparam>
+        /// <param name="component">组件实例</param>
+        /// <param name="height">高度</param>
+        public static TComponent Height<TComponent>( this TComponent component, double height ) where TComponent : IOption, IHeight {
+            var option = component as IOptionConfig;
+            option?.Config<Config>( config => {
+                config.SetAttribute( UiConst.Height, height );
             } );
             return component;
         }

@@ -9,15 +9,29 @@ namespace Util.Ui.Extensions {
     /// </summary>
     public static partial class Extensions {
         /// <summary>
-        /// 数据绑定
+        /// 设置占位提示符
         /// </summary>
         /// <typeparam name="TComponent">组件类型</typeparam>
         /// <param name="component">组件实例</param>
-        /// <param name="model">模型名称</param>
-        public static TComponent Model<TComponent>( this TComponent component, string model ) where TComponent : IComponent, IModel {
+        /// <param name="text">文本</param>
+        public static TComponent Placeholder<TComponent>( this TComponent component, string text ) where TComponent : IComponent, IPlaceholder {
             var option = component as IOptionConfig;
             option?.Config<Config>( config => {
-                config.Model = model;
+                config.SetAttribute( UiConst.Placeholder, text );
+            } );
+            return component;
+        }
+
+        /// <summary>
+        /// 模型绑定
+        /// </summary>
+        /// <typeparam name="TComponent">组件类型</typeparam>
+        /// <param name="component">组件实例</param>
+        /// <param name="model">模型</param>
+        public static TComponent Model<TComponent>( this TComponent component, string model ) where TComponent : IModel {
+            var option = component as IOptionConfig;
+            option?.Config<Config>( config => {
+                config.SetAttribute( UiConst.Model, model );
             } );
             return component;
         }

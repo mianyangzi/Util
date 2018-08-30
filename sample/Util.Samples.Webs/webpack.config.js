@@ -1,10 +1,12 @@
 ﻿const pathPlugin = require('path');
 const webpack = require('webpack');
 var Extract = require("extract-text-webpack-plugin");
+const AngularCompilerPlugin = require('@ngtools/webpack').AngularCompilerPlugin;
 
 module.exports = (env) => {
     //是否开发环境
-    const isDev = !(env && env.production);
+    const isDev = !(env && env.prod);
+    const mode = isDev ? "development" : "production";
 
     //将css提取到单独文件中
     const extractCss = new Extract("app.css");
@@ -16,13 +18,13 @@ module.exports = (env) => {
 
     //打包js
     let jsConfig = {
-        //输入
+        mode: mode,
         entry: { app: getPath("Typings/main.ts") },
-        //输出
         output: {
             publicPath: 'dist/',
             path: getPath("wwwroot/dist"),
-            filename: "[name].js"
+            filename: "[name].js",
+            chunkFilename: '[id].chunk.js'
         },
         resolve: {
             extensions: ['.js', '.ts']
@@ -30,24 +32,34 @@ module.exports = (env) => {
         devtool: "source-map",
         module: {
             rules: [
-                { test: /\.ts$/, use: ['awesome-typescript-loader?silent=true'] }
+                { test: /\.ts$/, use: isDev ? ['awesome-typescript-loader?silent=true', 'angular-router-loader'] : ['@ngtools/webpack'] },
+                { test: /\.js$/, loader: '@angular-devkit/build-optimizer/webpack-loader', options: { sourceMap: false } },
+                { test: /\.html$/, use: 'html-loader?minimize=false' }
             ]
         },
         plugins: [
+            new webpack.DefinePlugin({
+                'process.env': { NODE_ENV: isDev ? JSON.stringify("dev") : JSON.stringify("prod") }
+            })
+        ].concat(isDev ? [
             new webpack.DllReferencePlugin({
                 manifest: require('./wwwroot/dist/vendor-manifest.json')
             }),
-            new webpack.optimize.ModuleConcatenationPlugin()
-        ].concat(isDev ? [] : [
-            new webpack.optimize.UglifyJsPlugin()
-        ])
+            new webpack.DllReferencePlugin({
+                manifest: require('./wwwroot/dist/util-manifest.json')
+            })
+        ] : [
+                new AngularCompilerPlugin({
+                    tsConfigPath: 'tsconfig.json',
+                    entryModule: "Typings/app/app.module#AppModule"
+                })
+            ])
     }
 
     //打包css
     let cssConfig = {
-        //输入
-        entry: { app: getPath("wwwroot/css/style.css")},
-        //输出
+        mode: mode,
+        entry: { app: getPath("wwwroot/css/main.scss") },
         output: {
             publicPath: './',
             path: getPath("wwwroot/dist"),
@@ -59,9 +71,14 @@ module.exports = (env) => {
         devtool: "source-map",
         module: {
             rules: [
-                { test: /\.css$/, use: extractCss.extract({ use: isDev ? 'css-loader' : 'css-loader?minimize' }) },
                 {
-                    test: /\.(png|jpg|woff|woff2|eot|ttf|svg)(\?|$)/, use: {
+                    test: /\.scss$/, use: extractCss.extract({
+                        use: isDev ? ['css-loader', { loader: 'postcss-loader', options: { plugins: [require('autoprefixer')] } }, 'sass-loader']
+                            : ['css-loader?minimize', { loader: 'postcss-loader', options: { plugins: [require('autoprefixer')] } }, 'sass-loader']
+                    })
+                },
+                {
+                    test: /\.(png|jpg|gif|woff|woff2|eot|ttf|svg)(\?|$)/, use: {
                         loader: 'url-loader',
                         options: {
                             limit: 20000,

@@ -7,7 +7,7 @@ namespace Util.Applications {
     /// <summary>
     /// 增删改查服务 - 批量Save
     /// </summary>
-    public abstract partial class CrudServiceBase<TEntity, TDto, TRequest, TQueryParameter, TKey> {
+    public abstract partial class CrudServiceBase<TEntity, TDto, TRequest, TCreateRequest, TUpdateRequest, TQueryParameter, TKey> {
         /// <summary>
         /// 批量保存
         /// </summary>
@@ -74,8 +74,8 @@ namespace Util.Applications {
         private void AddList( List<TEntity> list ) {
             if( list.Count == 0 )
                 return;
-            Log.Content( "添加实体：" );
-            list.ForEach( Add );
+            Log.Content( "创建实体：" );
+            list.ForEach( Create );
         }
 
         /// <summary>
@@ -165,9 +165,9 @@ namespace Util.Applications {
         private async Task AddListAsync( List<TEntity> list ) {
             if( list.Count == 0 )
                 return;
-            Log.Content( "添加实体：" );
+            Log.Content( "创建实体：" );
             foreach ( var entity in list )
-                await AddAsync( entity );
+                await CreateAsync( entity );
         }
 
         /// <summary>

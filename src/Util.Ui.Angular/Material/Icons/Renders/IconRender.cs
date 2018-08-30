@@ -1,15 +1,16 @@
-﻿using Util.Ui.Builders;
+﻿using Util.Ui.Angular;
+using Util.Ui.Angular.Renders;
+using Util.Ui.Builders;
 using Util.Ui.Configs;
 using Util.Ui.Enums;
 using Util.Ui.Extensions;
 using Util.Ui.Material.Icons.Builders;
-using Util.Ui.Renders;
 
 namespace Util.Ui.Material.Icons.Renders {
     /// <summary>
     /// 图标渲染器
     /// </summary>
-    public class IconRender : RenderBase {
+    public class IconRender : AngularRenderBase {
         /// <summary>
         /// 配置
         /// </summary>
@@ -19,16 +20,25 @@ namespace Util.Ui.Material.Icons.Renders {
         /// 初始化图标渲染器
         /// </summary>
         /// <param name="config">配置</param>
-        public IconRender( IConfig config ) {
+        public IconRender( IConfig config ) : base( config ) {
             _config = config;
+        }
+
+        /// <summary>
+        /// 初始化生成器
+        /// </summary>
+        /// <param name="builder">标签生成器</param>
+        protected override void InitBuilder( TagBuilder builder ) {
+            builder.AddOutputAttributes( _config );
+            builder.Angular( _config );
         }
 
         /// <summary>
         /// 获取标签生成器
         /// </summary>
-        protected override ITagBuilder GetTagBuilder() {
+        protected override TagBuilder GetTagBuilder() {
             TagBuilder result = GetIconBuilder();
-            if ( result == TagBuilder.Null )
+            if( result == TagBuilder.Null )
                 return result;
             Config( result );
             return result;
@@ -54,13 +64,13 @@ namespace Util.Ui.Material.Icons.Renders {
         /// 获取堆叠图标标签生成器
         /// </summary>
         private TagBuilder GetStackIconBuilder() {
-            var result = new SpanBuilder();
+            var result = new StackIconBuilder();
             var parentIcon = GetSingleIconBuilder().Class( "fa-stack-2x" );
             var childIcon = GetFontAwesomeBuilder( UiConst.Child ).Class( "fa-stack-1x" );
-            if ( _config.Contains( UiConst.ChildClass ) )
+            if( _config.Contains( UiConst.ChildClass ) )
                 childIcon.Class( _config.GetValue( UiConst.ChildClass ) );
-            result.AddChild( parentIcon );
-            result.AddChild( childIcon );
+            result.AppendContent( parentIcon );
+            result.AppendContent( childIcon );
             return result;
         }
 
@@ -69,30 +79,46 @@ namespace Util.Ui.Material.Icons.Renders {
         /// </summary>
         private TagBuilder GetSingleIconBuilder() {
             TagBuilder result = TagBuilder.Null;
-            if( _config.Contains( UiConst.FontAwesomeIcon ) )
-                result = GetFontAwesomeBuilder( UiConst.FontAwesomeIcon );
-            if( _config.Contains( UiConst.MaterialIcon ) )
+            if( IsFontAwesome() )
+                result = GetFontAwesomeBuilder();
+            if( IsMaterial() )
                 result = GetMaterialIconBuilder();
-            result.AddOtherAttributes( _config );
+            result.AddOutputAttributes( _config );
             result.Class( _config );
             return result;
         }
 
         /// <summary>
+        /// 是否FontAwesome图标
+        /// </summary>
+        private bool IsFontAwesome() {
+            return _config.Contains( UiConst.FontAwesomeIcon ) || _config.Contains( AngularConst.BindFontAwesomeIcon );
+        }
+
+        /// <summary>
         /// 获取Font Awesome图标标签生成器
         /// </summary>
-        private ItalicBuilder GetFontAwesomeBuilder( string name ) {
-            var builder = new ItalicBuilder();
-            builder.Class( _config.GetValue<FontAwesomeIcon>( name ).GetIcon() );
+        private FontAwesomeIconBuilder GetFontAwesomeBuilder( string key = "", string bindKey = "" ) {
+            var builder = new FontAwesomeIconBuilder();
+            builder.SetIcon( _config, key );
+            builder.SetBindIcon( _config, bindKey );
             return builder;
+        }
+
+        /// <summary>
+        /// 是否Material图标
+        /// </summary>
+        private bool IsMaterial() {
+            return _config.Contains( UiConst.MaterialIcon ) || _config.Contains( AngularConst.BindMaterialIcon );
         }
 
         /// <summary>
         /// 获取Material图标标签生成器
         /// </summary>
-        private IconBuilder GetMaterialIconBuilder() {
-            var builder = new IconBuilder();
-            builder.SetContent( _config.GetValue<MaterialIcon>( UiConst.MaterialIcon ).Description() );
+        private MaterialIconBuilder GetMaterialIconBuilder() {
+            var builder = new MaterialIconBuilder();
+            builder.SetIcon( _config );
+            builder.SetBindIcon( _config );
             return builder;
         }
 
@@ -100,10 +126,19 @@ namespace Util.Ui.Material.Icons.Renders {
         /// 公共配置
         /// </summary>
         private void Config( TagBuilder builder ) {
-            builder.Id( _config );
+            builder.Style( _config );
+            ConfigId( builder );
             ConfigSize( builder );
             ConfigSpin( builder );
             ConfigRotate( builder );
+        }
+
+        /// <summary>
+        /// 配置标识
+        /// </summary>
+        protected override void ConfigId( TagBuilder builder ) {
+            if( _config.Contains( UiConst.Id ) )
+                builder.Attribute( UiConst.Id, _config.GetValue( UiConst.Id ), true );
         }
 
         /// <summary>

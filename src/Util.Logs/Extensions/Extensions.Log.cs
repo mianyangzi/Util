@@ -1,6 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Util.Datas.Sql;
 using Util.Exceptions;
 using Util.Logs.Contents;
+using Util.Logs.Properties;
 
 namespace Util.Logs.Extensions {
     /// <summary>
@@ -54,9 +58,9 @@ namespace Util.Logs.Extensions {
         /// <param name="type">参数类型</param>
         /// <param name="name">参数名</param>
         /// <param name="value">参数值</param>
-        public static ILog Params( this ILog log, string type, string name,string value ) {
-            return log.Set<LogContent>( content => 
-            content.AppendLine( content.Params,$"{LogResource.ParameterType}: {type}, {LogResource.ParameterName}: {name}, {LogResource.ParameterValue}: {value}。" ) );
+        public static ILog Params( this ILog log, string type, string name, string value ) {
+            return log.Set<LogContent>( content =>
+            content.AppendLine( content.Params, $"{LogResource.ParameterType}: {type}, {LogResource.ParameterName}: {name}, {LogResource.ParameterValue}: {value}。" ) );
         }
 
         /// <summary>
@@ -73,9 +77,8 @@ namespace Util.Logs.Extensions {
         /// </summary>
         /// <param name="log">日志操作</param>
         /// <param name="value">值</param>
-        /// <param name="args">变量值</param>
-        public static ILog Sql( this ILog log, string value, params object[] args ) {
-            return log.Set<LogContent>( content => content.AppendLine( content.Sql, value, args ) );
+        public static ILog Sql( this ILog log, string value ) {
+            return log.Set<LogContent>( content => content.Sql.AppendLine( value ) );
         }
 
         /// <summary>
@@ -83,9 +86,19 @@ namespace Util.Logs.Extensions {
         /// </summary>
         /// <param name="log">日志操作</param>
         /// <param name="value">值</param>
-        /// <param name="args">变量值</param>
-        public static ILog SqlParams( this ILog log, string value, params object[] args ) {
-            return log.Set<LogContent>( content => content.AppendLine( content.SqlParams, value, args ) );
+        public static ILog SqlParams( this ILog log, string value ) {
+            return log.Set<LogContent>( content => content.AppendLine( content.SqlParams, value ) );
+        }
+
+        /// <summary>
+        /// 设置Sql参数
+        /// </summary>
+        /// <param name="log">日志操作</param>
+        /// <param name="dictionary">字典</param>
+        public static ILog SqlParams( this ILog log, IDictionary<string, object> dictionary ) {
+            if( dictionary == null || dictionary.Count == 0 )
+                return log;
+            return SqlParams( log, dictionary.Select( t => $"{t.Key} : {SqlHelper.GetParamLiterals( t.Value )}" ).Join() );
         }
 
         /// <summary>
@@ -94,8 +107,8 @@ namespace Util.Logs.Extensions {
         /// <param name="log">日志操作</param>
         /// <param name="exception">异常</param>
         /// <param name="errorCode">错误码</param>
-        public static ILog Exception( this ILog log, Exception exception,string errorCode = "" ) {
-            if ( exception == null )
+        public static ILog Exception( this ILog log, Exception exception, string errorCode = "" ) {
+            if( exception == null )
                 return log;
             return Exception( log, new Warning( "", errorCode, exception ) );
         }

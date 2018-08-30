@@ -2,19 +2,27 @@
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.Extensions.Logging;
+using Util.Datas.Ef.Configs;
 using Util.Datas.UnitOfWorks;
 using Util.Domains.Auditing;
-using Util.Domains.Sessions;
 using Util.Exceptions;
+using Util.Datas.Ef.Logs;
+using Util.Datas.Matedatas;
+using Util.Datas.Sql;
+using Util.Logs;
+using Util.Sessions;
 
 namespace Util.Datas.Ef.Core {
     /// <summary>
     /// 工作单元
     /// </summary>
-    public abstract class UnitOfWorkBase : DbContext, IUnitOfWork {
+    public abstract class UnitOfWorkBase : DbContext, IUnitOfWork, IDatabase, IEntityMatedata {
 
         #region 构造方法
 
@@ -23,11 +31,11 @@ namespace Util.Datas.Ef.Core {
         /// </summary>
         /// <param name="options">配置</param>
         /// <param name="manager">工作单元服务</param>
-        protected UnitOfWorkBase( DbContextOptions options,IUnitOfWorkManager manager )
+        protected UnitOfWorkBase( DbContextOptions options, IUnitOfWorkManager manager )
             : base( options ) {
             manager?.Register( this );
             TraceId = Guid.NewGuid().ToString();
-            Session = Util.Domains.Sessions.Session.Null;
+            Session = Util.Security.Sessions.Session.Instance;
         }
 
         #endregion
@@ -42,6 +50,55 @@ namespace Util.Datas.Ef.Core {
         /// 用户会话
         /// </summary>
         public ISession Session { get; set; }
+
+        #endregion
+
+        #region OnConfiguring(配置)
+
+        /// <summary>
+        /// 配置
+        /// </summary>
+        /// <param name="builder">配置生成器</param>
+        protected override void OnConfiguring( DbContextOptionsBuilder builder ) {
+            EnableLog( builder );
+        }
+
+        /// <summary>
+        /// 启用日志
+        /// </summary>
+        protected void EnableLog( DbContextOptionsBuilder builder ) {
+            var log = GetLog();
+            if( IsEnabled( log ) == false )
+                return;
+            builder.EnableSensitiveDataLogging();
+            builder.UseLoggerFactory( new LoggerFactory( new[] { GetLogProvider( log ) } ) );
+        }
+
+        /// <summary>
+        /// 获取日志操作
+        /// </summary>
+        protected virtual ILog GetLog() {
+            try {
+                return Log.GetLog( EfLog.TraceLogName );
+            }
+            catch {
+                return Log.Null;
+            }
+        }
+
+        /// <summary>
+        /// 是否启用Ef日志
+        /// </summary>
+        private bool IsEnabled( ILog log ) {
+            return EfConfig.LogLevel != EfLogLevel.Off && log.IsTraceEnabled;
+        }
+
+        /// <summary>
+        /// 获取日志提供器
+        /// </summary>
+        protected virtual ILoggerProvider GetLogProvider( ILog log ) {
+            return new EfLogProvider( log, this );
+        }
 
         #endregion
 
@@ -72,7 +129,7 @@ namespace Util.Datas.Ef.Core {
             catch( DbUpdateConcurrencyException ex ) {
                 throw new ConcurrencyException( ex );
             }
-        } 
+        }
         #endregion
 
         #region OnModelCreating(配置映射)
@@ -99,7 +156,7 @@ namespace Util.Datas.Ef.Core {
         /// 获取定义映射配置的程序集列表
         /// </summary>
         protected virtual Assembly[] GetAssemblies() {
-            return new[] { GetType().GetTypeInfo().Assembly };
+            return new[] { GetType().Assembly };
         }
 
         /// <summary>
@@ -107,7 +164,7 @@ namespace Util.Datas.Ef.Core {
         /// </summary>
         /// <param name="assembly">程序集</param>
         protected virtual IEnumerable<IMap> GetMapTypes( Assembly assembly ) {
-            return Util.Helpers.Reflection.GetTypesByInterface<IMap>( assembly );
+            return Util.Helpers.Reflection.GetInstancesByInterface<IMap>( assembly );
         }
 
         #endregion
@@ -192,7 +249,57 @@ namespace Util.Datas.Ef.Core {
         public override Task<int> SaveChangesAsync( CancellationToken cancellationToken = default( CancellationToken ) ) {
             SaveChangesBefore();
             return base.SaveChangesAsync( cancellationToken );
-        } 
+        }
+        #endregion
+
+        #region GetConnection(获取数据库连接)
+
+        /// <summary>
+        /// 获取数据库连接
+        /// </summary>
+        public IDbConnection GetConnection() {
+            return Database.GetDbConnection();
+        }
+
+        #endregion
+
+        #region 获取元数据
+
+        /// <summary>
+        /// 获取表名
+        /// </summary>
+        /// <param name="entity">实体类型</param>
+        public string GetTable( Type entity ) {
+            if ( entity == null )
+                return null;
+            var entityType = Model.FindEntityType( entity );
+            return entityType?.FindAnnotation( "Relational:TableName" )?.Value.SafeString();
+        }
+
+        /// <summary>
+        /// 获取架构
+        /// </summary>
+        /// <param name="entity">实体类型</param>
+        public string GetSchema( Type entity ) {
+            if( entity == null )
+                return null;
+            var entityType = Model.FindEntityType( entity );
+            return entityType?.FindAnnotation( "Relational:Schema" )?.Value.SafeString();
+        }
+
+        /// <summary>
+        /// 获取列名
+        /// </summary>
+        /// <param name="entity">实体类型</param>
+        /// <param name="property">属性名</param>
+        public string GetColumn( Type entity, string property ) {
+            if( entity == null || string.IsNullOrWhiteSpace( property ) )
+                return null;
+            var entityType = Model.FindEntityType( entity );
+            var result = entityType?.GetProperty( property )?.FindAnnotation( "Relational:ColumnName" )?.Value.SafeString();
+            return string.IsNullOrWhiteSpace( result ) ? property : result;
+        }
+
         #endregion
     }
 }

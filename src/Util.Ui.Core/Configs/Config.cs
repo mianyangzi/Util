@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
-using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Razor.TagHelpers;
+using Util.Ui.TagHelpers;
 
 namespace Util.Ui.Configs {
     /// <summary>
@@ -15,88 +15,75 @@ namespace Util.Ui.Configs {
         /// <summary>
         /// 初始化配置
         /// </summary>
-        public Config() : this( new TagHelperAttributeList(), new TagHelperAttributeList(), null ) {
+        public Config() : this( null ) {
         }
 
         /// <summary>
         /// 初始化配置
         /// </summary>
-        /// <param name="attributes">属性集合</param>
-        /// <param name="otherAttributes">其它属性集合</param>
-        /// <param name="content">内容</param>
-        public Config( TagHelperAttributeList attributes, TagHelperAttributeList otherAttributes, IHtmlContent content ) {
+        /// <param name="context">TagHelper上下文</param>
+        public Config( Context context ) {
             _classList = new List<string>();
-            Attributes = attributes;
-            OtherAttributes = otherAttributes;
-            Content = content;
+            Load( context );
         }
 
         /// <summary>
-        /// 属性集合
+        /// 加载
         /// </summary>
-        public TagHelperAttributeList Attributes { get; }
+        /// <param name="context">上下文</param>
+        public void Load( Context context ) {
+            if( context == null ) {
+                AllAttributes = new TagHelperAttributeList();
+                OutputAttributes = new TagHelperAttributeList();
+                return;
+            }
+            AllAttributes = context.AllAttributes;
+            OutputAttributes = context.OutputAttributes;
+            Content = context.Content;
+            Context = new TagHelperContext( AllAttributes, context.TagHelperContext.Items, context.TagHelperContext.UniqueId );
+            Output = context.Output;
+        }
 
         /// <summary>
-        /// 其它属性集合
+        /// 加载
         /// </summary>
-        public TagHelperAttributeList OtherAttributes { get; }
+        /// <param name="context">上下文</param>
+        /// <param name="output">输出</param>
+        public void Load( TagHelperContext context, TagHelperOutput output ) {
+            Load( new Context( context, output, null ) );
+        }
+
+        /// <summary>
+        /// 全部属性集合
+        /// </summary>
+        public TagHelperAttributeList AllAttributes { get; private set; }
+
+        /// <summary>
+        /// 输出属性集合，TagHelper中未明确定义的属性从该集合获取
+        /// </summary>
+        public TagHelperAttributeList OutputAttributes { get; private set; }
 
         /// <summary>
         /// 内容
         /// </summary>
-        public IHtmlContent Content { get; set; }
+        public TagHelperContent Content { get; set; }
 
         /// <summary>
-        /// 名称
+        /// TagHelper上下文
         /// </summary>
-        public string Name { get; set; }
+        public TagHelperContext Context { get; private set; }
 
         /// <summary>
-        /// 值
+        /// TagHelper输出
         /// </summary>
-        public string Value { get; set; }
-
-        /// <summary>
-        /// 类型
-        /// </summary>
-        public string Type { get; set; }
-
-        /// <summary>
-        /// 占位符
-        /// </summary>
-        public string Placeholder { get; set; }
-
-        /// <summary>
-        /// 必填项
-        /// </summary>
-        public bool Required { get; set; }
-
-        /// <summary>
-        /// 必填项错误消息
-        /// </summary>
-        public string RequiredMessage { get; set; }
-
-        /// <summary>
-        /// 最小长度
-        /// </summary>
-        public int MinLength { get; set; }
-
-        /// <summary>
-        /// 最小长度错误消息
-        /// </summary>
-        public string MinLengthMessage { get; set; }
-
-        /// <summary>
-        /// 模型
-        /// </summary>
-        public string Model { get; set; }
+        public TagHelperOutput Output { get; private set; }
 
         /// <summary>
         /// 属性集合是否包含指定属性
         /// </summary>
         /// <param name="name">属性名</param>
         public bool Contains( string name ) {
-            return Attributes.ContainsName( name );
+            return AllAttributes.ContainsName( name );
         }
 
         /// <summary>
@@ -104,7 +91,15 @@ namespace Util.Ui.Configs {
         /// </summary>
         /// <param name="name">属性名</param>
         public string GetValue( string name ) {
-            return Contains( name ) ? Attributes[name].Value.SafeString() : string.Empty;
+            return Contains( name ) ? AllAttributes[name].Value.SafeString() : string.Empty;
+        }
+
+        /// <summary>
+        /// 获取属性值，无值则返回null
+        /// </summary>
+        /// <param name="name">属性名</param>
+        public string GetValueOrNull( string name ) {
+            return Contains( name ) ? AllAttributes[name].Value.SafeString() : null;
         }
 
         /// <summary>
@@ -113,7 +108,15 @@ namespace Util.Ui.Configs {
         /// <typeparam name="T">目标类型</typeparam>
         /// <param name="name">属性名</param>
         public T GetValue<T>( string name ) {
-            return Util.Helpers.Convert.To<T>( GetValue( name ) );
+            return Contains( name ) ? Util.Helpers.Convert.To<T>( AllAttributes[name].Value ) : default( T );
+        }
+
+        /// <summary>
+        /// 获取布尔属性值
+        /// </summary>
+        /// <param name="name">属性名</param>
+        public string GetBoolValue( string name ) {
+            return Util.Helpers.String.FirstLowerCase( GetValue( name ) );
         }
 
         /// <summary>
@@ -121,8 +124,11 @@ namespace Util.Ui.Configs {
         /// </summary>
         /// <param name="name">属性名</param>
         /// <param name="value">值</param>
-        public void SetAttribute( string name,object value ) {
-            Attributes.SetAttribute( new TagHelperAttribute( name,value ) );
+        /// <param name="replaceExisting">是否替换已存在的属性</param>
+        public void SetAttribute( string name, object value, bool replaceExisting = true ) {
+            if( replaceExisting == false && Contains( name ) )
+                return;
+            AllAttributes.SetAttribute( new TagHelperAttribute( name, value ) );
         }
 
         /// <summary>
@@ -130,7 +136,7 @@ namespace Util.Ui.Configs {
         /// </summary>
         /// <param name="name">属性名</param>
         public void Remove( string name ) {
-            Attributes.RemoveAll( name );
+            AllAttributes.RemoveAll( name );
         }
 
         /// <summary>
@@ -149,6 +155,27 @@ namespace Util.Ui.Configs {
         /// </summary>
         public List<string> GetClassList() {
             return _classList;
+        }
+
+        /// <summary>
+        /// 是否验证
+        /// </summary>
+        public static bool IsValidate { get; set; } = true;
+
+        /// <summary>
+        /// 验证
+        /// </summary>
+        public string Validate() {
+            if( IsValidate )
+                return GetValidateMessage();
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// 获取验证消息
+        /// </summary>
+        public virtual string GetValidateMessage() {
+            return string.Empty;
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using Util.Helpers.Internal;
@@ -186,10 +187,10 @@ namespace Util.Helpers {
         /// </summary>
         private static byte[] Iv {
             get {
-                if ( _iv == null ) {
+                if( _iv == null ) {
                     var size = 16;
                     _iv = new byte[size];
-                    for ( int i = 0; i < size; i++ )
+                    for( int i = 0; i < size; i++ )
                         _iv[i] = 0;
                 }
                 return _iv;
@@ -228,7 +229,7 @@ namespace Util.Helpers {
             if( string.IsNullOrWhiteSpace( value ) || string.IsNullOrWhiteSpace( key ) )
                 return string.Empty;
             var rijndaelManaged = CreateRijndaelManaged( key );
-            using ( var transform = rijndaelManaged.CreateEncryptor( rijndaelManaged.Key, rijndaelManaged.IV ) ) {
+            using( var transform = rijndaelManaged.CreateEncryptor( rijndaelManaged.Key, rijndaelManaged.IV ) ) {
                 return GetEncryptResult( value, encoding, transform );
             }
         }
@@ -327,6 +328,85 @@ namespace Util.Helpers {
                 return string.Empty;
             var rsa = new RsaHelper( type, encoding, key );
             return rsa.Sign( value );
+        }
+
+        /// <summary>
+        /// Rsa验签，采用 SHA1 算法
+        /// </summary>
+        /// <param name="value">待验签的值</param>
+        /// <param name="publicKey">公钥</param>
+        /// <param name="sign">签名</param>
+        public static bool RsaVerify( string value, string publicKey, string sign ) {
+            return RsaVerify( value, publicKey, sign, Encoding.UTF8 );
+        }
+
+        /// <summary>
+        /// Rsa验签，采用 SHA1 算法
+        /// </summary>
+        /// <param name="value">待验签的值</param>
+        /// <param name="publicKey">公钥</param>
+        /// <param name="sign">签名</param>
+        /// <param name="encoding">编码</param>
+        public static bool RsaVerify( string value, string publicKey, string sign, Encoding encoding ) {
+            return RsaVerify( value, publicKey, sign, encoding, RSAType.RSA );
+        }
+
+        /// <summary>
+        /// Rsa验签，采用 SHA256 算法
+        /// </summary>
+        /// <param name="value">待验签的值</param>
+        /// <param name="publicKey">公钥</param>
+        /// <param name="sign">签名</param>
+        public static bool Rsa2Verify( string value, string publicKey, string sign ) {
+            return Rsa2Verify( value, publicKey, sign, Encoding.UTF8 );
+        }
+
+        /// <summary>
+        /// Rsa验签，采用 SHA256 算法
+        /// </summary>
+        /// <param name="value">待验签的值</param>
+        /// <param name="publicKey">公钥</param>
+        /// <param name="sign">签名</param>
+        /// <param name="encoding">编码</param>
+        public static bool Rsa2Verify( string value, string publicKey, string sign, Encoding encoding ) {
+            return RsaVerify( value, publicKey, sign, encoding, RSAType.RSA2 );
+        }
+
+        /// <summary>
+        /// Rsa验签
+        /// </summary>
+        private static bool RsaVerify( string value, string publicKey, string sign, Encoding encoding, RSAType type ) {
+            if( string.IsNullOrWhiteSpace( value ) || string.IsNullOrWhiteSpace( publicKey ) || string.IsNullOrWhiteSpace( sign ) )
+                return false;
+            var rsa = new RsaHelper( type, encoding, publicKey: publicKey );
+            return rsa.Verify( value, sign );
+        }
+
+        #endregion
+
+        #region HmacSha256加密
+
+        /// <summary>
+        /// HMACSHA256加密
+        /// </summary>
+        /// <param name="value">值</param>
+        /// <param name="key">密钥</param>
+        public static string HmacSha256( string value, string key ) {
+            return HmacSha256( value, key,Encoding.UTF8 );
+        }
+
+        /// <summary>
+        /// HMACSHA256加密
+        /// </summary>
+        /// <param name="value">值</param>
+        /// <param name="key">密钥</param>
+        /// <param name="encoding">字符编码</param>
+        public static string HmacSha256( string value,string key, Encoding encoding ) {
+            if( string.IsNullOrWhiteSpace( value ) || string.IsNullOrWhiteSpace( key ) )
+                return string.Empty;
+            var sha256 = new HMACSHA256( encoding.GetBytes( key ) );
+            var hash = sha256.ComputeHash( encoding.GetBytes( value ) );
+            return string.Join( "", hash.ToList().Select( t => t.ToString( "x2" ) ).ToArray() );
         }
 
         #endregion

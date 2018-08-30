@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Util.Logs.Abstractions;
 
 namespace Util.Logs.Extensions {
@@ -19,9 +20,8 @@ namespace Util.Logs.Extensions {
         /// </summary>
         /// <param name="log">日志操作</param>
         /// <param name="value">值</param>
-        /// <param name="args">变量值</param>
-        public static ILog Content( this ILog log, string value, params object[] args ) {
-            return log.Set<ILogContent>( content => content.Content( value, args ) );
+        public static ILog Content( this ILog log, string value ) {
+            return log.Set<ILogContent>( content => content.Content( value ) );
         }
 
         /// <summary>
@@ -29,11 +29,20 @@ namespace Util.Logs.Extensions {
         /// </summary>
         /// <param name="log">日志操作</param>
         /// <param name="dictionary">字典</param>
-        public static ILog Content( this ILog log, IDictionary<string,string> dictionary ) {
-            if ( dictionary == null )
+        public static ILog Content( this ILog log, IDictionary<string, object> dictionary ) {
+            return Content( log, dictionary.ToDictionary( t => t.Key, t => t.Value.SafeString() ) );
+        }
+
+        /// <summary>
+        /// 设置内容
+        /// </summary>
+        /// <param name="log">日志操作</param>
+        /// <param name="dictionary">字典</param>
+        public static ILog Content( this ILog log, IDictionary<string, string> dictionary ) {
+            if( dictionary == null )
                 return log;
-            foreach ( var keyValue in dictionary )
-                log.Set<ILogContent>( content => content.Content( "{0} : {1}", keyValue.Key, keyValue.Value ) );
+            foreach( var keyValue in dictionary )
+                log.Set<ILogContent>( content => content.Content( $"{keyValue.Key} : {keyValue.Value}" ) );
             return log;
         }
     }

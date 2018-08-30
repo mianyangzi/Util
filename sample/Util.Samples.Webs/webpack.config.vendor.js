@@ -4,36 +4,43 @@ var Extract = require("extract-text-webpack-plugin");
 
 //第三方Js库
 const jsModules = [
+    'reflect-metadata',
+    'zone.js',
+    'moment',
     '@angular/animations',
     '@angular/common',
+    '@angular/common/http',
     '@angular/compiler',
     '@angular/core',
     '@angular/forms',
-    '@angular/http',
+    '@angular/elements',
     '@angular/platform-browser',
     '@angular/platform-browser/animations',
     '@angular/platform-browser-dynamic',
     '@angular/router',
-    'es6-promise',
-    'es6-shim',
-    'reflect-metadata',
-    'zone.js',
-    'hammerjs',
-    '@angular/material'
+    '@angular/cdk/esm5/collections.es5',
+    '@angular/flex-layout',
+    '@angular/material',
+    'primeng/primeng',
+    'lodash',
+    "echarts-ng2"
 ];
 
 //第三方Css库
 const cssModules = [
     '@angular/material/prebuilt-themes/indigo-pink.css',
-    'bootstrap/dist/css/bootstrap.css',
     'material-design-icons/iconfont/material-icons.css',
-    'font-awesome/css/font-awesome.css'
+    'font-awesome/css/font-awesome.css',
+    'primeicons/primeicons.css',
+    'primeng/resources/themes/omega/theme.css',
+    'primeng/resources/primeng.min.css'
 ];
 
 //env代表环境变量，如果传入env.production表示正式生产环境
 module.exports = (env) => {
     //是否开发环境
-    const isDev = !(env && env.production);
+    const isDev = !(env && env.prod);
+    const mode = isDev ? "development" : "production";
 
     //将css提取到单独文件中
     const extractCss = new Extract("vendor.css");
@@ -43,10 +50,10 @@ module.exports = (env) => {
         return pathPlugin.join(__dirname, path);
     }
 
-    let jsConfig =  {
-        //输入
+    //打包第三方Js库
+    let vendorJs = {
+        mode: mode,
         entry: { vendor: jsModules },
-        //输出
         output: {
             publicPath: 'dist/',
             path: getPath("wwwroot/dist"),
@@ -62,18 +69,16 @@ module.exports = (env) => {
                 path: getPath("wwwroot/dist/[name]-manifest.json"),
                 name: "[name]"
             }),
-            new webpack.optimize.ModuleConcatenationPlugin(),
             new webpack.ContextReplacementPlugin(/\@angular\b.*\b(bundles|linker)/, getPath('./Typings')),
             new webpack.ContextReplacementPlugin(/angular(\\|\/)core(\\|\/)@angular/, getPath('./Typings')),
             new webpack.IgnorePlugin(/^vertx$/)
-        ].concat(isDev ? [] : [new webpack.optimize.UglifyJsPlugin()])
+        ]
     }
 
     //打包css
-    let cssConfig = {
-        //输入
+    let vendorCss = {
+        mode: mode,
         entry: { vendor: cssModules },
-        //输出
         output: {
             publicPath: './',
             path: getPath("wwwroot/dist"),
@@ -84,7 +89,7 @@ module.exports = (env) => {
             rules: [
                 { test: /\.css$/, use: extractCss.extract({ use: isDev ? 'css-loader' : 'css-loader?minimize' }) },
                 {
-                    test: /\.(png|jpg|woff|woff2|eot|ttf|svg)(\?|$)/, use: {
+                    test: /\.(png|jpg|gif|woff|woff2|eot|ttf|svg)(\?|$)/, use: {
                         loader: 'url-loader',
                         options: {
                             limit: 20000,
@@ -99,5 +104,5 @@ module.exports = (env) => {
             extractCss
         ]
     }
-    return [jsConfig, cssConfig];
+    return isDev ? [ vendorJs, vendorCss] : [vendorCss];
 }

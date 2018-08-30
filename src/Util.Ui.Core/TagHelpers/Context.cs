@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Html;
-using Microsoft.AspNetCore.Razor.TagHelpers;
+﻿using Microsoft.AspNetCore.Razor.TagHelpers;
+using Util.Ui.Extensions;
 
 namespace Util.Ui.TagHelpers {
     /// <summary>
@@ -12,25 +12,46 @@ namespace Util.Ui.TagHelpers {
         /// <param name="context">TagHelper上下文</param>
         /// <param name="output">TagHelper输出</param>
         /// <param name="content">内容</param>
-        public Context( TagHelperContext context, TagHelperOutput output, IHtmlContent content ) {
-            Attributes = new TagHelperAttributeList( context.AllAttributes ) ;
-            OtherAttributes = output.Attributes;
+        public Context( TagHelperContext context, TagHelperOutput output, TagHelperContent content ) {
+            TagHelperContext = context;
+            Output = output;
+            AllAttributes = new TagHelperAttributeList( context.AllAttributes ) ;
+            OutputAttributes = new TagHelperAttributeList( output.Attributes ); 
             Content = content;
         }
-        
-        /// <summary>
-        /// 属性集合，包含全部属性
-        /// </summary>
-        public TagHelperAttributeList Attributes { get; }
 
         /// <summary>
-        /// 属性集合，在TagHelper中未明确定义的属性放入该集合
+        /// TagHelper上下文
         /// </summary>
-        public TagHelperAttributeList OtherAttributes { get; }
+        public TagHelperContext TagHelperContext { get; }
+
+        /// <summary>
+        /// TagHelper输出
+        /// </summary>
+        public TagHelperOutput Output { get; }
+
+        /// <summary>
+        /// 全部属性集合
+        /// </summary>
+        public TagHelperAttributeList AllAttributes { get; }
+
+        /// <summary>
+        /// 输出属性集合，TagHelper中未明确定义的属性从该集合获取
+        /// </summary>
+        public TagHelperAttributeList OutputAttributes { get; }
 
         /// <summary>
         /// 内容
         /// </summary>
-        public IHtmlContent Content { get; }
+        public TagHelperContent Content { get; }
+
+        /// <summary>
+        /// 从TagHelperContext Items里获取值
+        /// </summary>
+        /// <typeparam name="T">返回类型</typeparam>
+        /// <param name="key">键</param>
+        public T GetValueFromItems<T>( object key ) {
+            return TagHelperContext.GetValueFromItems<T>( key );
+        }
     }
 }

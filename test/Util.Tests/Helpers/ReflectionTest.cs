@@ -17,7 +17,7 @@ namespace Util.Tests.Helpers {
         /// <summary>
         /// 测试样例
         /// </summary>
-        private Sample _sample;
+        private readonly Sample _sample;
 
         /// <summary>
         /// 测试获取类成员描述
@@ -40,7 +40,7 @@ namespace Util.Tests.Helpers {
         }
 
         /// <summary>
-        /// 测试获取显示名
+        /// 测试显示名
         /// </summary>
         [Fact]
         public void TestGetDisplayName() {
@@ -126,6 +126,18 @@ namespace Util.Tests.Helpers {
             Assert.True( Util.Helpers.Reflection.IsNumber( _sample.FloatValue.GetType().GetTypeInfo() ), "FloatValue GetType" );
             Assert.True( Util.Helpers.Reflection.IsNumber( _sample.GetType().GetMember( "FloatValue" )[0] ), "FloatValue" );
             Assert.True( Util.Helpers.Reflection.IsNumber( _sample.GetType().GetMember( "NullableFloatValue" )[0] ), "NullableFloatValue" );
+
+            Assert.True( Util.Helpers.Reflection.IsNumber( _sample.IntValue.GetType().GetTypeInfo() ), "IntValue GetType" );
+            Assert.True( Util.Helpers.Reflection.IsNumber( _sample.GetType().GetMember( "IntValue" )[0] ), "IntValue" );
+            Assert.True( Util.Helpers.Reflection.IsNumber( _sample.GetType().GetMember( "NullableIntValue" )[0] ), "NullableIntValue" );
+        }
+
+        /// <summary>
+        /// 测试是否集合
+        /// </summary>
+        [Fact]
+        public void TestIsCollection() {
+            Assert.True( Util.Helpers.Reflection.IsCollection( _sample.StringArray.GetType() ) );
         }
 
         /// <summary>
@@ -134,6 +146,23 @@ namespace Util.Tests.Helpers {
         [Fact]
         public void TestIsGenericCollection() {
             Assert.True( Util.Helpers.Reflection.IsGenericCollection( _sample.StringList.GetType() ) );
+        }
+
+        /// <summary>
+        /// 测试获取公共属性列表
+        /// </summary>
+        [Fact]
+        public void TestGetPublicProperties() {
+            Sample4 sample = new Sample4 {
+                A = "1",
+                B = "2"
+            };
+            var items = Util.Helpers.Reflection.GetPublicProperties( sample );
+            Assert.Equal( 2,items.Count );
+            Assert.Equal( "A", items[0].Text );
+            Assert.Equal( "1", items[0].Value );
+            Assert.Equal( "B", items[1].Text );
+            Assert.Equal( "2", items[1].Value );
         }
     }
 }

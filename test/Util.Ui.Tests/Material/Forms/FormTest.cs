@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using System.Text.Encodings.Web;
 using Util.Ui.Extensions;
 using Util.Ui.Material.Forms;
 using Xunit;
@@ -25,7 +24,7 @@ namespace Util.Ui.Tests.Material.Forms {
         /// </summary>
         public FormTest( ITestOutputHelper output ) {
             _output = output;
-            _form = new Form( new StringWriter(), HtmlEncoder.Default );
+            _form = new Form( new StringWriter() );
         }
 
         /// <summary>
@@ -44,31 +43,8 @@ namespace Util.Ui.Tests.Material.Forms {
         [Fact]
         public void TestDefault() {
             var result = new String();
-            result.Append( "<form>" );
-            result.Append( "</form>" );
+            result.Append( "<form></form>" );
             Assert.Equal( result.ToString(), GetResult( _form ) );
-        }
-
-        /// <summary>
-        /// 测试添加属性
-        /// </summary>
-        [Fact]
-        public void TestAttribute_1() {
-            var result = new String();
-            result.Append( "<form a=\"\">" );
-            result.Append( "</form>" );
-            Assert.Equal( result.ToString(), GetResult( _form.Attribute( "a" ) ) );
-        }
-
-        /// <summary>
-        /// 测试添加属性
-        /// </summary>
-        [Fact]
-        public void TestAttribute_2() {
-            var result = new String();
-            result.Append( "<form a=\"1\">" );
-            result.Append( "</form>" );
-            Assert.Equal( result.ToString(), GetResult( _form.Attribute( "a", "1" ) ) );
         }
 
         /// <summary>
@@ -77,9 +53,20 @@ namespace Util.Ui.Tests.Material.Forms {
         [Fact]
         public void TestId() {
             var result = new String();
-            result.Append( "<form id=\"a\">" );
+            result.Append( "<form #a=\"ngForm\">" );
             result.Append( "</form>" );
             Assert.Equal( result.ToString(), GetResult( _form.Id( "a" ) ) );
+        }
+
+        /// <summary>
+        /// 测试提交事件
+        /// </summary>
+        [Fact]
+        public void TestOnSubmit() {
+            var result = new String();
+            result.Append( "<form (ngSubmit)=\"a\">" );
+            result.Append( "</form>" );
+            Assert.Equal( result.ToString(), GetResult( _form.OnSubmit( "a" ) ) );
         }
     }
 }

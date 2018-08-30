@@ -1,5 +1,5 @@
-﻿using System;
-using Microsoft.AspNetCore.Mvc.Filters;
+﻿using Microsoft.AspNetCore.Mvc.Filters;
+using Util.Webs.Commons;
 
 namespace Util.Webs.Filters {
     /// <summary>
@@ -11,8 +11,8 @@ namespace Util.Webs.Filters {
         /// </summary>
         public override void OnException( ExceptionContext context ) {
             context.ExceptionHandled = true;
-            //context.Result = null;
-            throw new NotImplementedException();
+            context.HttpContext.Response.StatusCode = 200;
+            context.Result = new Result( StateCode.Fail, context.Exception.GetPrompt() );
         }
     }
 }

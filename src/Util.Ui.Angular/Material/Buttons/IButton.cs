@@ -1,9 +1,11 @@
-﻿using Util.Ui.Operations.Styles;
+﻿using System;
+using Util.Ui.Components;
+using Util.Ui.Operations.Navigation;
 
 namespace Util.Ui.Material.Buttons {
     /// <summary>
-    /// Material按钮
+    /// 按钮
     /// </summary>
-    public interface IButton : Util.Ui.Components.IButton, IPlain,IColor {
+    public interface IButton : IComponent, IContainer<IDisposable>, Components.IButton, IMenuId {
     }
 }
